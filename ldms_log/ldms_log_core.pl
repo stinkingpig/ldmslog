@@ -11,7 +11,7 @@ package ldms_log_core;
 # Pragmas and Modules                                                       #
 #############################################################################
 use strict;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
+use vars qw($prog $VERSION @ISA @EXPORT @EXPORT_OK);
 use warnings;
 use Env;
 use Cwd;
@@ -20,6 +20,8 @@ use Win32::TieRegistry ( Delimiter => "/", ArrayValues => 1 );
 use Getopt::Long;
 use File::Tail;
 use File::Basename;
+use Carp;
+use ldms_log;
 
 #############################################################################
 # Preparation                                                               #
@@ -36,11 +38,11 @@ GetOptions(
     'help'       => \$help,
 );
 
+
 ( my $prog = $0 ) =~ s/^         # command line from the beginning
                        .*[\\\/]  # without any slashes
                        //x;
-$VERSION = "1.0.0";
-
+$VERSION = "1.0.1";
 my $usage = <<"EOD";
 
 Usage: $prog [/debug] [/help]
@@ -57,11 +59,12 @@ EOD
 croak $usage if $help;
 
 # Prepare logging system
-my $logfile = "ldms_log_core.log";
-my $LOG;
-open( $LOG, '>', $logfile ) or croak("Cannot open $logfile - $!");
-print $LOG localtime() . " $prog $VERSION starting.\n";
-close($LOG);
+$ldms_log::prog = $prog;
+$ldms_log::DEBUG = $DEBUG;
+$ldms_log::ver = $VERSION;
+my $logfile = "$prog.log";
+$ldms_log::logfile = $logfile;
+&NewLog();
 
 #############################################################################
 # Variables                                                                 #
@@ -122,43 +125,6 @@ sub DoTail {
         }
     }
     return 0;
-}
-
-### Logging subroutine ######################################################
-sub Log {
-    my $msg = shift;
-    if ( !defined($msg) ) { $msg = "Log: Can't report nothing"; }
-    open( $LOG, '>>', "$logfile" ) or croak("Can't open $logfile - $!");
-    $LOG->autoflush();
-    print $LOG localtime() . ": $msg\n";
-    close($LOG);
-    if ($DEBUG) { print $msg; }
-    return 0;
-}
-
-### Logging with warning subroutine #########################################
-sub LogWarn {
-    my $msg = shift;
-    if ( !defined($msg) ) { $msg = "LogWarn: Can't report nothing"; }
-    open( $LOG, '>>', "$logfile" ) or croak("Can't open $logfile - $!");
-    $LOG->autoflush();
-    print $LOG localtime() . ": WARN: $msg\n";
-    close($LOG);
-
-    Win32::GUI::MessageBox( 0, "$msg", "ldms_log_core", 64 );
-    return 0;
-}
-
-### Logging with death subroutine ###########################################
-sub LogDie {
-    my $msg = shift;
-    if ( !defined($msg) ) { $msg = "LogDie Can't report nothing"; }
-    open( $LOG, '>>', "$logfile" ) or croak("Can't open $logfile - $!");
-    $LOG->autoflush();
-    print $LOG localtime() . ": DIE: $msg\n";
-    close($LOG);
-    Win32::GUI::MessageBox( 0, "$msg", "ldms_log_core", 48 );
-    exit 1;
 }
 
 ### Select the files we're monitoring ######################################
