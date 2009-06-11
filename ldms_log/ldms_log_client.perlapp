@@ -4,7 +4,7 @@ Packer: C:\Program Files\ActiveState Perl Dev Kit 8.0.1\bin\perlapp.exe
 Script: ldms_log_client.pl
 Cwd: C:\Documents and Settings\Jack Coates\My Documents\code\ldms_log
 Clean: 0
-Date: 2009-06-09 22:53:44
+Date: 2009-06-11 07:54:18
 Debug: 
 Dependent: 0
 Dyndll: 0
@@ -22,12 +22,12 @@ Verbose: 0
 Version-Comments: It's A Scientific Venture!
 Version-CompanyName: Monkeynoodle.Org
 Version-FileDescription: ldms_log_client
-Version-FileVersion: 1.0.0
+Version-FileVersion: 1.0.1
 Version-InternalName: ldms_log_client
 Version-LegalCopyright: Jack Coates, <jack@monkeynoodle.org>
 Version-LegalTrademarks: 
 Version-OriginalFilename: ldms_log_client
 Version-ProductName: ldms_log_client
-Version-ProductVersion: 1.0.0
+Version-ProductVersion: 1.0.1
 Warnings: 0
 Xclude: 0
