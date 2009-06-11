@@ -73,7 +73,7 @@ $ldms_log::logfile = $logfile;
 # Global variables
 my (
     $RegKey,   $FILE,    $ldmain, $ldlog, $lpmdir,
-    @logfiles, $ldlogon, @files
+    @logfiles, $ldlogon, @files,  $Win 
 );
 
 my $timeout = 30;
@@ -86,6 +86,7 @@ my $timeout = 30;
 &ReadRegistry;
 &LocateFiles;
 &SetupTail;
+&BuildWindow;
 while (1) { &DoTail; }
 
 exit(0);
@@ -121,7 +122,9 @@ sub DoTail {
     else {
         foreach (@pending) {
             my $filename = basename( $_->{"input"} );
-            &Log( $filename . ": " . $_->read );
+            my $message = $filename . ": " . $_->read;
+            &Log( $message );
+            &Display( $message );
         }
     }
     return 0;
@@ -270,6 +273,39 @@ sub SetValueFromReg {
         return -1;
     }
 }
+
+### BuildWindow subroutine #################################################
+sub BuildWindow {
+    $Win = new Win32::GUI::Window(
+      -left   => 341,
+      -top    => 218,
+      -width  => 300,
+      -height => 86,
+      -name   => "Win",
+      -text   => "Status Window"
+      );
+
+$Win->AddLabel(
+       -text    => "  ",
+       -name    => "Label",
+       -left    => 5,
+       -top     => 5,
+       -width   => 280,
+       -height  => 48,
+      );
+    
+}
+
+### Display in the Window subroutine ########################################
+sub Display {
+    my $text=shift;
+   $Win->Show();
+   $Win->BringWindowToTop();
+   $Win->Update();
+   $Win->Label->Text($text);
+   $Win->Label->Update();
+}
+
 
 1;
 __END__

@@ -1,49 +1,49 @@
 package ldms_log;
 
-    use strict;
-    use warnings;
-    use Carp;
+use strict;
+use warnings;
+use Carp;
 
-    BEGIN {
-        use Exporter   ();
-        our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
+BEGIN {
+    use Exporter ();
+    our ( $VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
-        # set the version for version checking
-        $VERSION     = 1.0.0;
-        @ISA         = qw(Exporter);
-        @EXPORT      = qw(&NewLog &Log &LogWarn &LogDie);
-        %EXPORT_TAGS = ( );     # eg: TAG => [ qw!name1 name2! ],
+    # set the version for version checking
+    $VERSION = 1.0.0;
+    @ISA     = qw(Exporter);
+    @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie);
+    %EXPORT_TAGS = ();    # eg: TAG => [ qw!name1 name2! ],
 
-        # your exported package globals go here,
-        # as well as any optionally exported functions
-        @EXPORT_OK   = qw($prog $LOG $logfile $DEBUG);
-    }
-    our @EXPORT_OK;
+    # your exported package globals go here,
+    # as well as any optionally exported functions
+    @EXPORT_OK = qw($prog $LOG $logfile $DEBUG);
+}
+our @EXPORT_OK;
 
-    # exported package globals go here
-    our ($prog, $ver, $LOG, $logfile, $DEBUG);
+# exported package globals go here
+our ( $prog, $ver, $LOG, $logfile, $DEBUG );
 
-    # non-exported package globals go here
+# non-exported package globals go here
 
-    # initialize package globals, first exported ones
+# initialize package globals, first exported ones
 
-    # then the others (which are still accessible as $Some::Module::stuff)
+# then the others (which are still accessible as $Some::Module::stuff)
 
-    # all file-scoped lexicals must be created before
-    # the functions below that use them.
+# all file-scoped lexicals must be created before
+# the functions below that use them.
 
-    # file-private lexicals go here
+# file-private lexicals go here
 
-    # make all your functions, whether exported or not;
+# make all your functions, whether exported or not;
 ### Create new logfile subroutine ###########################################
 sub NewLog {
-    if (!defined($logfile)) { return 1; }
+    if ( !defined($logfile) ) { return 1; }
     open( $LOG, '>', $logfile ) or croak("Cannot open $logfile - $!");
     print $LOG localtime() . " $prog $ver starting.\n";
     close($LOG);
     return 0;
 }
-    
+
 ### Logging subroutine ######################################################
 sub Log {
     my $msg = shift;
@@ -81,8 +81,7 @@ sub LogDie {
     exit 1;
 }
 
+END { }    # module clean-up code here (global destructor)
 
-    END { }       # module clean-up code here (global destructor)
-
-    1;  # don't forget to return a true value from the file
+1;         # don't forget to return a true value from the file
 
