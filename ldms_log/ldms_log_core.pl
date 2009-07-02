@@ -38,7 +38,7 @@ GetOptions(
 ( my $prog = $0 ) =~ s/^         # command line from the beginning
                        .*[\\\/]  # without any slashes
                        //x;
-$VERSION = "1.0.1";
+$VERSION = "1.0.2";
 my $usage = <<"EOD";
 
 Usage: $prog [/debug] [/help]
@@ -92,6 +92,8 @@ exit(0);
 # Subroutines                                                               #
 #############################################################################
 
+
+
 ### Select the files we're monitoring ######################################
 sub LocateFiles {
 
@@ -101,15 +103,16 @@ sub LocateFiles {
     }
 
 # TODO -- Handle IIS logs
-# TODO -- Handle $ldlog\\scheduledtaskhandler_#.log
-# TODO -- Handle $ldlogon\\AdvanceAgent\[Agent Name].exe.log
-# TODO -- Handle $ldlog\\CJ-OSD-[SCRIPT NAME].log
-# TODO -- Handle $ldlog\\CAB_#.log
-# TODO -- Handle $ldmain\\MCC-[xxxxxxxxxxxxxxxxx].log
-# TODO -- Handle $ldmain\\MCS-[xxxxxxxxxxxxxxxxx].log
-# TODO -- Handle $lpmdir\\TaskEngine\[xxxx]Landesk.Workflow.TaskEngine.Internal.log
-# TODO -- Handle $ldmain\\Rollup_[LinkName].log
 # TODO -- Handle XTRACE files: http://community.landesk.com/support/docs/DOC-1623
+
+    &LocateAutoNamedFiles( $ldlog, 'scheduledtaskhandler_(\d+).log' );
+    &LocateAutoNamedFiles( $ldlog, 'cab_(\d+).log' );
+    &LocateAutoNamedFiles( $ldlog, 'cj-(.+).log' );
+    &LocateAutoNamedFiles( $ldlog, 'mcc-(.+).log' );
+    &LocateAutoNamedFiles( $ldlog, 'mcs-(.+).log' );
+    &LocateAutoNamedFiles( "$ldlogon\\advanceagent", '(.+).exe.log' );
+    &LocateAutoNamedFiles( $ldmain, 'Rollup_(.+).log' );
+    &LocateAutoNamedFiles( "$lpmdir\\TaskEngine", '(.+)Landesk.Workflow.TaskEngine.Internal.log' );
 
     my @Corelogs = (
         "$ldmain\\alertdetail.log",
@@ -174,6 +177,9 @@ sub LocateFiles {
             #            $candidate = Win32::GetShortPathName($candidate);
             if ( -e $candidate ) {
                 push @ldms_log::logfiles, $candidate;
+                if ($DEBUG) {
+                    &Log("monitoring $candidate");
+                }
             }
             else {
                 if ($DEBUG) {
@@ -194,9 +200,9 @@ sub ReadRegistry {
     if ($RegKey) {
         $ldmain = &SetValueFromReg("LDMainPath");
         $ldmain = Win32::GetShortPathName($ldmain);
-        if ($DEBUG) { &LogDebug("LDMAIN is $ldmain"); }
+        if ($DEBUG) { &Log("LDMAIN is $ldmain"); }
         $ldlog   = $ldmain . "log";
-        $ldlogon = $ldmain . "logon";
+        $ldlogon = $ldmain . "ldlogon";
 
     }
 
@@ -205,7 +211,7 @@ sub ReadRegistry {
     if ($RegKey) {
         $lpmdir = &SetValueFromReg("InstallPath");
         $lpmdir = Win32::GetShortPathName($lpmdir);
-        if ($DEBUG) { &LogDebug("LPMDIR is $lpmdir"); }
+        if ($DEBUG) { &Log("LPMDIR is $lpmdir"); }
     }
 
     return 0;
@@ -224,14 +230,14 @@ sub SetValueFromReg {
         }
         else {
             if ($DEBUG) {
-                &LogDebug("SetValueFromReg, key $keyname was empty.");
+                &Log("SetValueFromReg, key $keyname was empty.");
             }
             return 0;
         }
     }
     else {
         if ($DEBUG) {
-            &LogDebug("SetValueFromReg called without RegKey handle");
+            &Log("SetValueFromReg called without RegKey handle");
         }
         return -1;
     }
