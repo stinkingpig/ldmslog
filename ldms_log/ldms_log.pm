@@ -3,27 +3,41 @@ package ldms_log;
 use strict;
 use warnings;
 use Carp;
+use File::Basename;
+use File::Tail;
+use Win32::GUI ();
 
 BEGIN {
     use Exporter ();
     our ( $VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
     # set the version for version checking
-    $VERSION = 1.0.0;
+    $VERSION = 1.0.1;
     @ISA     = qw(Exporter);
-    @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie);
+    @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie &SetupTail &DoTail
+      &BuildWindow);
     %EXPORT_TAGS = ();    # eg: TAG => [ qw!name1 name2! ],
 
     # your exported package globals go here,
     # as well as any optionally exported functions
-    @EXPORT_OK = qw($prog $LOG $logfile $DEBUG);
+    @EXPORT_OK = qw($prog $LOG $logfile $DEBUG @files @logfiles $timeout);
 }
 our @EXPORT_OK;
 
 # exported package globals go here
-our ( $prog, $ver, $LOG, $logfile, $DEBUG );
+our ( $prog, $ver, $LOG, $logfile, $DEBUG, @files, @logfiles, $timeout, $Main );
+our $ldms_log_icon =
+  new Win32::GUI::Icon("red.ico");    # replace default camel icon with my own
+
+our $ldms_log_class =
+  new Win32::GUI::Class(  # set up a class to use my icon throughout the program
+    -name => "ldms_log Class",
+    -icon => $ldms_log_icon,
+  );
 
 # non-exported package globals go here
+my ( $RegKey, $FILE, $ldmain, $ldlog, $lpmdir, $ldlogon, );
+my ( $Wintext, $sb, $desk, $dw, $dh, $wx, $wy, $ncw, $nch, $h, $w );
 
 # initialize package globals, first exported ones
 
@@ -79,6 +93,128 @@ sub LogDie {
     close($LOG);
     Win32::GUI::MessageBox( 0, "$msg", "ldms_log_core", 48 );
     exit 1;
+}
+
+### Prepare all these tail handles subroutine ###############################
+sub SetupTail {
+    foreach (@logfiles) {
+        push(
+            @files,
+            File::Tail->new(
+                name               => "$_",
+                debug              => $DEBUG,
+                ignore_nonexistant => 1,
+                tail               => 1,
+            )
+        );
+    }
+    return 0;
+}
+
+### See what's on Tail subroutine ###########################################
+sub DoTail {
+    my ( $nfound, $timeleft, @pending ) =
+      File::Tail::select( undef, undef, undef, $timeout, @files );
+    unless ($nfound) {
+        Win32::GUI::DoEvents();
+
+        # timeout - do something else here, if you need to
+        &Log("-- MARK --");
+        &Display("-- MARK --\n");
+    }
+    else {
+        foreach (@pending) {
+            Win32::GUI::DoEvents();
+            my $filename = basename( $_->{"input"} );
+            my $message  = $filename . ": " . $_->read;
+            &Log($message);
+            &Display($message);
+        }
+    }
+    return 0;
+}
+
+### BuildWindow subroutine #################################################
+sub BuildWindow {
+
+    $Main = new Win32::GUI::Window(
+        -left        => 341,
+        -top         => 218,
+        -width       => 800,
+        -height      => 600,
+        -name        => "Main",
+        -text        => "$prog $ver",
+        -class       => $ldms_log_class,
+        -dialogui    => 1,
+        -onTerminate => \&Window_Terminate,
+        -onResize    => \&Main_Resize,
+        -onTimer     => \&T1_Timer,
+
+    );
+
+    $sb = $Main->AddStatusBar();
+
+    $Wintext = $Main->AddTextfield(
+        -text        => "  ",
+        -name        => "Wintext",
+        -width       => $Main->Width(),
+        -height      => $Main->Height() - $sb->Height,
+        -autovscroll => 1,
+        -autohscroll => 1,
+        -readonly    => 1,
+        -multiline   => 1,
+    );
+
+    # calculate its size
+    $ncw = $Main->Width() - $Main->ScaleWidth();
+    $nch = $Main->Height() - $Main->ScaleHeight();
+    $w   = $Wintext->Width() + $ncw;
+    $h   = $Wintext->Height() + $nch;
+
+    # Don't let it get smaller than it should be
+    $Main->Change( -minsize => [ $w, $h ] );
+
+    # calculate its centered position
+    # Assume we have the main window size in ($w, $h) as before
+    $desk = Win32::GUI::GetDesktopWindow();
+    $dw   = Win32::GUI::Width($desk);
+    $dh   = Win32::GUI::Height($desk);
+    $wx   = ( $dw - $w ) / 2;
+    $wy   = ( $dh - $h ) / 2;
+
+    # Resize, position and display
+    $Main->Resize( $w, $h );
+    $Main->Move( $wx, $wy );
+
+    return 0;
+}
+
+### Display in the Window subroutine ########################################
+sub Display {
+    my $text = shift;
+    $Main->Show();
+    $Main->BringWindowToTop();
+    $Main->Update();
+    $Wintext->Append($text);
+    $Wintext->Update();
+}
+
+### Resize the Main Window ##################################################
+sub Main_Resize {
+    $sb->Move( 0, $Main->ScaleHeight - $sb->Height );
+    $sb->Resize( $Main->ScaleWidth, $sb->Height );
+    $Wintext->Resize( $Main->Width(), $Main->Height() - $sb->Height );
+    return 0;
+}
+
+### Universal Window Termination ############################################
+sub Window_Terminate {
+    return -1;
+}
+
+### Window timer ############################################################
+sub T1_Timer {
+    &DoTail;
 }
 
 END { }    # module clean-up code here (global destructor)
