@@ -4,13 +4,13 @@ Packer: C:\Program Files\ActiveState Perl Dev Kit 8.0.1\bin\perlapp.exe
 Script: ldms_log_client.pl
 Cwd: C:\Documents and Settings\Jack Coates\My Documents\code\ldms_log
 Clean: 0
-Date: 2009-07-02 12:57:48
+Date: 2009-07-02 14:23:38
 Debug: 
 Dependent: 0
 Dyndll: 0
 Exe: ldms_log_client.exe
 Force: 1
-Gui: 0
+Gui: 1
 Hostname: geode
 Icon: red.ico
 No-Compress: 0
