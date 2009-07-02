@@ -15,10 +15,8 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 use warnings;
 use Env;
 use Cwd;
-use Win32::GUI ();
-use Getopt::Long;
-use File::Tail;
 use File::Basename;
+use Getopt::Long;
 use Carp;
 use ldms_log;
 
@@ -61,8 +59,7 @@ croak $usage if $help;
 $ldms_log::prog = $prog;
 $ldms_log::DEBUG = $DEBUG;
 $ldms_log::ver = $VERSION;
-my $logfile = "$prog.log";
-$ldms_log::logfile = $logfile;
+$ldms_log::logfile = "$prog.log";
 &NewLog();
 
 #############################################################################
@@ -70,9 +67,9 @@ $ldms_log::logfile = $logfile;
 #############################################################################
 
 # Global variables
-my ( $RegKey, $FILE, $ldmain, $ldlog, $lpmdir, @logfiles, $ldlogon, @files );
+my ( $RegKey, $FILE );
 
-my $timeout = 30;
+$ldms_log::timeout = 30;
 
 my $basedir = "C:\\Progra~1";
 if ($PROGRAMFILES) {
@@ -97,46 +94,19 @@ $localappdata = Win32::GetShortPathName($localappdata);
 # Set up
 &LocateFiles;
 &SetupTail;
-while (1) { &DoTail; }
+&BuildWindow;
+
+# Put a timer on it
+# Causes DoTail to be called every 30 seconds
+$ldms_log::Main->AddTimer( 'T1', 30000 );
+&DoTail;
+Win32::GUI::Dialog();
 
 exit(0);
 
 #############################################################################
 # Subroutines                                                               #
 #############################################################################
-
-### Prepare all these tail handles subroutine ###############################
-sub SetupTail {
-    foreach (@logfiles) {
-        push(
-            @files,
-            File::Tail->new(
-                name               => "$_",
-                debug              => $DEBUG,
-                ignore_nonexistant => 1,
-                tail               => 20,
-            )
-        );
-    }
-    return 0;
-}
-
-### See what's on Tail subroutine ###########################################
-sub DoTail {
-    my ( $nfound, $timeleft, @pending ) =
-      File::Tail::select( undef, undef, undef, $timeout, @files );
-    unless ($nfound) {
-
-        # timeout - do something else here, if you need to
-    }
-    else {
-        foreach (@pending) {
-            my $filename = basename( $_->{"input"} );
-            &Log( $filename . ": " . $_->read );
-        }
-    }
-    return 0;
-}
 
 ### Select the files we're monitoring ######################################
 sub LocateFiles {
@@ -151,6 +121,7 @@ sub LocateFiles {
 # TODO -- Handle $ldclient\\[MSI Name].log (created during installation of MSI packages)
 # TODO -- Handle "$localappdata\\vulScan\\vulscan.#.log (The vulscan log will roll and create a vulscan.1.log, vulscan.2.log, etc)
 # TODO -- Handle "$ldclient\\data\\proddefs\\*.xml"
+# TODO -- Handle XTRACE files: http://community.landesk.com/support/docs/DOC-1623    
 
     my @Clientlogs = (
         "$ldclient\\amtmon.Log",
@@ -194,7 +165,7 @@ sub LocateFiles {
 
             #            $candidate = Win32::GetShortPathName($candidate);
             if ( -e $candidate ) {
-                push @logfiles, $candidate;
+                push @ldms_log::logfiles, $candidate;
             }
             else {
                 if ($DEBUG) {

@@ -15,11 +15,8 @@ use vars qw($prog $VERSION @ISA @EXPORT @EXPORT_OK);
 use warnings;
 use Env;
 use Cwd;
-use Win32::GUI ();
 use Win32::TieRegistry ( Delimiter => "/", ArrayValues => 1 );
 use Getopt::Long;
-use File::Tail;
-use File::Basename;
 use Carp;
 use ldms_log;
 
@@ -34,10 +31,9 @@ for ( 0 .. $#ARGV ) {
 my ( $DEBUG, $help ) = '';
 GetOptions(
     '/',
-    'debug'      => \$DEBUG,
-    'help'       => \$help,
+    'debug' => \$DEBUG,
+    'help'  => \$help,
 );
-
 
 ( my $prog = $0 ) =~ s/^         # command line from the beginning
                        .*[\\\/]  # without any slashes
@@ -59,11 +55,10 @@ EOD
 croak $usage if $help;
 
 # Prepare logging system
-$ldms_log::prog = $prog;
-$ldms_log::DEBUG = $DEBUG;
-$ldms_log::ver = $VERSION;
-my $logfile = "$prog.log";
-$ldms_log::logfile = $logfile;
+$ldms_log::prog    = $prog;
+$ldms_log::DEBUG   = $DEBUG;
+$ldms_log::ver     = $VERSION;
+$ldms_log::logfile = "$prog.log";
 &NewLog();
 
 #############################################################################
@@ -71,12 +66,9 @@ $ldms_log::logfile = $logfile;
 #############################################################################
 
 # Global variables
-my (
-    $RegKey,   $FILE,    $ldmain, $ldlog, $lpmdir,
-    @logfiles, $ldlogon, @files,  $Win 
-);
+my ( $RegKey, $FILE, $ldmain, $ldlog, $lpmdir, $ldlogon, );
 
-my $timeout = 30;
+$ldms_log::timeout = 30;
 
 #############################################################################
 # Main Loop                                                                 #
@@ -87,48 +79,18 @@ my $timeout = 30;
 &LocateFiles;
 &SetupTail;
 &BuildWindow;
-while (1) { &DoTail; }
+
+# Put a timer on it
+# Causes DoTail to be called every 30 seconds
+$ldms_log::Main->AddTimer( 'T1', 30000 );
+&DoTail;
+Win32::GUI::Dialog();
 
 exit(0);
 
 #############################################################################
 # Subroutines                                                               #
 #############################################################################
-
-### Prepare all these tail handles subroutine ###############################
-sub SetupTail {
-    foreach (@logfiles) {
-        push(
-            @files,
-            File::Tail->new(
-                name               => "$_",
-                debug              => $DEBUG,
-                ignore_nonexistant => 1,
-                tail               => 20,
-            )
-        );
-    }
-    return 0;
-}
-
-### See what's on Tail subroutine ###########################################
-sub DoTail {
-    my ( $nfound, $timeleft, @pending ) =
-      File::Tail::select( undef, undef, undef, $timeout, @files );
-    unless ($nfound) {
-
-        # timeout - do something else here, if you need to
-    }
-    else {
-        foreach (@pending) {
-            my $filename = basename( $_->{"input"} );
-            my $message = $filename . ": " . $_->read;
-            &Log( $message );
-            &Display( $message );
-        }
-    }
-    return 0;
-}
 
 ### Select the files we're monitoring ######################################
 sub LocateFiles {
@@ -147,6 +109,7 @@ sub LocateFiles {
 # TODO -- Handle $ldmain\\MCS-[xxxxxxxxxxxxxxxxx].log
 # TODO -- Handle $lpmdir\\TaskEngine\[xxxx]Landesk.Workflow.TaskEngine.Internal.log
 # TODO -- Handle $ldmain\\Rollup_[LinkName].log
+# TODO -- Handle XTRACE files: http://community.landesk.com/support/docs/DOC-1623
 
     my @Corelogs = (
         "$ldmain\\alertdetail.log",
@@ -210,7 +173,7 @@ sub LocateFiles {
 
             #            $candidate = Win32::GetShortPathName($candidate);
             if ( -e $candidate ) {
-                push @logfiles, $candidate;
+                push @ldms_log::logfiles, $candidate;
             }
             else {
                 if ($DEBUG) {
@@ -273,39 +236,6 @@ sub SetValueFromReg {
         return -1;
     }
 }
-
-### BuildWindow subroutine #################################################
-sub BuildWindow {
-    $Win = new Win32::GUI::Window(
-      -left   => 341,
-      -top    => 218,
-      -width  => 300,
-      -height => 86,
-      -name   => "Win",
-      -text   => "Status Window"
-      );
-
-$Win->AddLabel(
-       -text    => "  ",
-       -name    => "Label",
-       -left    => 5,
-       -top     => 5,
-       -width   => 280,
-       -height  => 48,
-      );
-    
-}
-
-### Display in the Window subroutine ########################################
-sub Display {
-    my $text=shift;
-   $Win->Show();
-   $Win->BringWindowToTop();
-   $Win->Update();
-   $Win->Label->Text($text);
-   $Win->Label->Update();
-}
-
 
 1;
 __END__
