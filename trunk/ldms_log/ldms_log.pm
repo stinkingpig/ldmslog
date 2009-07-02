@@ -12,10 +12,10 @@ BEGIN {
     our ( $VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
     # set the version for version checking
-    $VERSION = 1.0.1;
+    $VERSION = 1.0.2;
     @ISA     = qw(Exporter);
     @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie &SetupTail &DoTail
-      &BuildWindow);
+      &BuildWindow &LocateAutoNamedFiles);
     %EXPORT_TAGS = ();    # eg: TAG => [ qw!name1 name2! ],
 
     # your exported package globals go here,
@@ -66,7 +66,7 @@ sub Log {
     $LOG->autoflush();
     print $LOG localtime() . ": $msg\n";
     close($LOG);
-    if ($DEBUG) { print $msg; }
+    if ($DEBUG) { print "$msg\n"; }
     return 0;
 }
 
@@ -217,6 +217,47 @@ sub T1_Timer {
     &DoTail;
 }
 
+### Locate auto-named log files #############################################
+sub LocateAutoNamedFiles {
+    my ( $dir, $pattern ) = @_;
+    if ( !-e $dir ) {
+        &LogWarn("Directory $dir doesn't exist");
+        return 1;
+    }
+    my $regex = eval { qr/$pattern/i };
+    &LogDie("Invalid pattern $pattern specified: $@") if $@;
+    my $timefloor = eval(time() - 86400);
+    my $DIR;
+    opendir( $DIR, "$dir" ) or &LogDie("Can't open $dir - $!");
+    while ( my $candidate = readdir($DIR) ) {
+
+        # Next file if we're at the top
+        next if $candidate =~ /^       # from the beginning of the line
+                            \.\.?   # two dots then anything
+                            $       # to the end of the line
+                            /x;
+
+        if ( $candidate =~ m/$regex/ ) {
+
+            # stat, 7 is SIZE, 8 is ATIME, 9 is MTIME, 10 is CTIME
+            my $mtime = ( stat($dir . "\\" .$candidate) )[9]
+              or &LogWarn("stat($candidate) failed: $!");
+            if ( $mtime > $timefloor ) {
+                if ($DEBUG) {
+                    &Log("monitoring $candidate");
+                }
+                push @ldms_log::logfiles, $candidate;
+            }
+            else {
+                if ($DEBUG) {
+                    &Log("skipping $candidate");
+                }
+            }
+        }
+    }
+    closedir($DIR);
+    return 0;
+}
 END { }    # module clean-up code here (global destructor)
 
 1;         # don't forget to return a true value from the file

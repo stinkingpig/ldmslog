@@ -38,7 +38,7 @@ GetOptions(
 ( my $prog = $0 ) =~ s/^         # command line from the beginning
                        .*[\\\/]  # without any slashes
                        //x;
-$VERSION = "1.0.1";
+$VERSION = "1.0.2";
 
 my $usage = <<"EOD";
 
@@ -56,9 +56,9 @@ EOD
 croak $usage if $help;
 
 # Prepare logging system
-$ldms_log::prog = $prog;
-$ldms_log::DEBUG = $DEBUG;
-$ldms_log::ver = $VERSION;
+$ldms_log::prog    = $prog;
+$ldms_log::DEBUG   = $DEBUG;
+$ldms_log::ver     = $VERSION;
 $ldms_log::logfile = "$prog.log";
 &NewLog();
 
@@ -80,7 +80,7 @@ my $ldshared = $basedir . "\\LANDesk\\Shared\ Files";
 my $sdcache  = $ldclient . "\\sdmcache";
 my $localappdata;
 if ($ALLUSERSPROFILE) {
-    $localappdata = $ALLUSERSPROFILE;
+    $localappdata = $ALLUSERSPROFILE . "\\Application\ Data";
 }
 else {
     $localappdata = Win32::GetFolderPath( CSIDL_COMMON_APPDATA() );
@@ -116,12 +116,10 @@ sub LocateFiles {
         &LogDie("Can't find $ldclient");
     }
 
-# TODO -- Handle $ldclient\\data\\sdclient_task#.log
-# TODO -- Handle $ldclient\\SDClientTask.[Core-Name].[task#].log
-# TODO -- Handle $ldclient\\[MSI Name].log (created during installation of MSI packages)
-# TODO -- Handle "$localappdata\\vulScan\\vulscan.#.log (The vulscan log will roll and create a vulscan.1.log, vulscan.2.log, etc)
-# TODO -- Handle "$ldclient\\data\\proddefs\\*.xml"
-# TODO -- Handle XTRACE files: http://community.landesk.com/support/docs/DOC-1623    
+# TODO -- Handle XTRACE files: http://community.landesk.com/support/docs/DOC-1623
+    &LocateAutoNamedFiles( "$ldclient\\data",        'sdclient_task(.+).log' );
+    &LocateAutoNamedFiles( "$ldclient",              'sdclienttask.(.+).log' );
+    &LocateAutoNamedFiles( "$localappdata\\vulscan", 'vulscan.(\d).log' );
 
     my @Clientlogs = (
         "$ldclient\\amtmon.Log",
@@ -166,6 +164,10 @@ sub LocateFiles {
             #            $candidate = Win32::GetShortPathName($candidate);
             if ( -e $candidate ) {
                 push @ldms_log::logfiles, $candidate;
+                if ($DEBUG) {
+                    &Log("monitoring $candidate");
+                }
+
             }
             else {
                 if ($DEBUG) {
