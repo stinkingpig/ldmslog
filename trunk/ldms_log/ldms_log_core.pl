@@ -38,7 +38,7 @@ GetOptions(
 ( my $prog = $0 ) =~ s/^         # command line from the beginning
                        .*[\\\/]  # without any slashes
                        //x;
-$VERSION = "1.0.4";
+$VERSION = "1.0.5";
 my $usage = <<"EOD";
 
 Usage: $prog [/debug] [/help]
