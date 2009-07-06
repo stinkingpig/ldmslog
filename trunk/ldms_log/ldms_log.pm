@@ -12,7 +12,7 @@ BEGIN {
     our ( $VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
     # set the version for version checking
-    $VERSION = 1.0.2;
+    $VERSION = 1.0.3;
     @ISA     = qw(Exporter);
     @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie &SetupTail &DoTail
       &BuildWindow &LocateAutoNamedFiles);
@@ -37,7 +37,7 @@ our $ldms_log_class =
 
 # non-exported package globals go here
 my ( $RegKey, $FILE, $ldmain, $ldlog, $lpmdir, $ldlogon, );
-my ( $Wintext, $sb, $desk, $dw, $dh, $wx, $wy, $ncw, $nch, $h, $w );
+my ( $Wintext, $desk, $dw, $dh, $wx, $wy, $ncw, $nch, $h, $w );
 
 # initialize package globals, first exported ones
 
@@ -115,6 +115,7 @@ sub SetupTail {
 sub DoTail {
     my ( $nfound, $timeleft, @pending ) =
       File::Tail::select( undef, undef, undef, $timeout, @files );
+    Win32::GUI::DoEvents();
     unless ($nfound) {
         Win32::GUI::DoEvents();
 
@@ -127,6 +128,7 @@ sub DoTail {
             Win32::GUI::DoEvents();
             my $filename = basename( $_->{"input"} );
             my $message  = $filename . ": " . $_->read;
+            Win32::GUI::DoEvents();
             &Log($message);
             &Display($message);
         }
@@ -152,17 +154,18 @@ sub BuildWindow {
 
     );
 
-    $sb = $Main->AddStatusBar();
-
-    $Wintext = $Main->AddTextfield(
-        -text        => "  ",
+    $Wintext = $Main->AddRichEdit(
+        -text        => "",
         -name        => "Wintext",
-        -width       => $Main->Width(),
-        -height      => $Main->Height() - $sb->Height,
+        -width       => $Main->Width() - 8,
+        -height      => $Main->Height() - 10,
+        -vscroll     => 1, 
         -autovscroll => 1,
-        -autohscroll => 1,
         -readonly    => 1,
         -multiline   => 1,
+        -LimitText   => 2**31 - 1, 
+        -AutoURLDetect => 1, 
+        -ShowScrollBar => 1, 
     );
 
     # calculate its size
@@ -195,15 +198,14 @@ sub Display {
     $Main->Show();
     $Main->BringWindowToTop();
     $Main->Update();
-    $Wintext->Append($text);
+    $Wintext->SetSel(-1, -1);
+    $Wintext->ReplaceSel($text);
     $Wintext->Update();
 }
 
 ### Resize the Main Window ##################################################
 sub Main_Resize {
-    $sb->Move( 0, $Main->ScaleHeight - $sb->Height );
-    $sb->Resize( $Main->ScaleWidth, $sb->Height );
-    $Wintext->Resize( $Main->Width(), $Main->Height() - $sb->Height );
+    $Wintext->Resize( $Main->Width() - 8, $Main->Height() - 10);
     return 0;
 }
 
