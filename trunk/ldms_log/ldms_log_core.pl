@@ -38,7 +38,7 @@ GetOptions(
 ( my $prog = $0 ) =~ s/^         # command line from the beginning
                        .*[\\\/]  # without any slashes
                        //x;
-$VERSION = "1.0.3";
+$VERSION = "1.0.4";
 my $usage = <<"EOD";
 
 Usage: $prog [/debug] [/help]
@@ -103,8 +103,8 @@ sub LocateFiles {
         &LogDie("Can't find $ldmain");
     }
 
-# TODO -- Handle IIS logs
-# TODO -- Handle XTRACE files: http://community.landesk.com/support/docs/DOC-1623
+    # Handle IIS logs
+    &LocateAutoNamedFiles( "$WINDIR\\system32\\LogFiles\\W3SVC1", 'ex(\d+).log' );
 
     &LocateAutoNamedFiles( $ldlog, 'scheduledtaskhandler_(\d+).log' );
     &LocateAutoNamedFiles( $ldlog, 'cab_(\d+).log' );
@@ -116,6 +116,26 @@ sub LocateFiles {
     &LocateAutoNamedFiles( "$lpmdir\\TaskEngine", '(.+)Landesk.Workflow.TaskEngine.Internal.log' );
 
     my @Corelogs = (
+        "$ldmain\\amslib.xlg",
+        "$ldmain\\apmapi.xlg",
+        "$ldmain\\apmservice.xlg",
+        "$ldmain\\cbaxfr.xlg",
+        "$ldmain\\custjob.xlg",
+        "$ldmain\\iao.xlg",
+        "$ldmain\\ldinv32.xlg",
+        "$ldmain\\msgsys_dll.xlg",
+        "$ldmain\\msgsys_exe.xlg",
+        "$ldmain\\netmap.xlg",
+        "$ldmain\\nts.xlg",
+        "$ldmain\\pds.xlg",
+        "$ldmain\\qipclnt.xlg",
+        "$ldmain\\qipsrvr.xlg",
+        "$ldmain\\scheduler.xlg",
+        "$ldmain\\sdmakini.xlg",
+        "$ldmain\\sdstinst.xlg",
+        "$ldmain\\tmcsrvr.xlg",
+        "$ldmain\\wcustjob.xlg",
+        "$ldmain\\xfr.xlg",
         "$ldmain\\alertdetail.log",
         "$ldmain\\alertname2table.exe.log",
         "$ldmain\\alertrule2xml.exe.log",

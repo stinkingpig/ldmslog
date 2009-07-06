@@ -38,7 +38,7 @@ GetOptions(
 ( my $prog = $0 ) =~ s/^         # command line from the beginning
                        .*[\\\/]  # without any slashes
                        //x;
-$VERSION = "1.0.3";
+$VERSION = "1.0.4";
 
 my $usage = <<"EOD";
 
@@ -100,6 +100,7 @@ $localappdata = Win32::GetShortPathName($localappdata);
 # Causes DoTail to be called every 10 seconds
 $ldms_log::Main->AddTimer( 'T1', 10000 );
 &DoTail;
+&ShowTail;
 Win32::GUI::Dialog();
 
 exit(0);
@@ -116,12 +117,23 @@ sub LocateFiles {
         &LogDie("Can't find $ldclient");
     }
 
-# TODO -- Handle XTRACE files: http://community.landesk.com/support/docs/DOC-1623
     &LocateAutoNamedFiles( "$ldclient\\data",        'sdclient_task(.+).log' );
     &LocateAutoNamedFiles( "$ldclient",              'sdclienttask.(.+).log' );
     &LocateAutoNamedFiles( "$localappdata\\vulscan", 'vulscan.(\d).log' );
 
     my @Clientlogs = (
+        "$ldclient\\lddwnld.xlg",
+        "$ldclient\\localsch.xlg",
+        "$ldclient\\ltapi.xlg",
+        "$ldclient\\msgsys_dll.xlg",
+        "$ldclient\\msgsys_exe.xlg",
+        "$ldclient\\pds.xlg",
+        "$ldclient\\sdclient.xlg",
+        "$ldclient\\tmcclnt.xlg",
+        "$ldclient\\tmcsrvr.xlg",
+        "$ldclient\\tmcsvcexe.xlg",
+        "$ldclient\\usbmon.xlg",
+        "$ldclient\\wscfg32.xlg",
         "$ldclient\\amtmon.Log",
         "$ldclient\\sdclient.log",
         "$ldclient\\tmcsvc.log",

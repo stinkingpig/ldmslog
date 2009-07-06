@@ -15,7 +15,7 @@ BEGIN {
     our ( $VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
     # set the version for version checking
-    $VERSION = 1.0.3;
+    $VERSION = 1.0.4;
     @ISA     = qw(Exporter);
     @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie &SetupTail &DoTail
       &BuildWindow &LocateAutoNamedFiles &ShowTail);
