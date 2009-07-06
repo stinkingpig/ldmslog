@@ -15,7 +15,7 @@ BEGIN {
     our ( $VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
     # set the version for version checking
-    $VERSION = 1.0.4;
+    $VERSION = 1.0.5;
     @ISA     = qw(Exporter);
     @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie &SetupTail &DoTail
       &BuildWindow &LocateAutoNamedFiles &ShowTail);
@@ -137,7 +137,7 @@ sub DoTail {
         Win32::GUI::DoEvents();
 
         # timeout - do something else here, if you need to
-        $message = "-- MARK --";
+        $message = localtime() . ": -- MARK --";
     }
     else {
         foreach (@pending) {
@@ -152,10 +152,14 @@ sub DoTail {
 
 ### Show what's on Tail subroutine #########################################
 sub ShowTail {
-    my $message = $Q_tail->dequeue_nb;
-    if ($message) {
-        &Log($message);
-        &Display("$message\n");
+    if ($Q_tail->pending) {
+        foreach my $line (1..$Q_tail->pending) {
+          my $message = $Q_tail->dequeue_nb;
+            if ($message) {
+                &Log($message);
+                &Display("$message\n");
+            }
+        }
     }
     return 0;
 }
