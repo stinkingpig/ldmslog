@@ -97,8 +97,8 @@ $localappdata = Win32::GetShortPathName($localappdata);
 &BuildWindow;
 
 # Put a timer on it
-# Causes DoTail to be called every 10 seconds
-$ldms_log::Main->AddTimer( 'T1', 10000 );
+# Causes DoTail to be called every 1 seconds
+$ldms_log::Main->AddTimer( 'T1', 1000 );
 &DoTail;
 &ShowTail;
 Win32::GUI::Dialog();
