@@ -6,6 +6,9 @@ use Carp;
 use File::Basename;
 use File::Tail;
 use Win32::GUI ();
+use threads;
+use Thread::Queue;
+
 
 BEGIN {
     use Exporter ();
@@ -15,7 +18,7 @@ BEGIN {
     $VERSION = 1.0.3;
     @ISA     = qw(Exporter);
     @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie &SetupTail &DoTail
-      &BuildWindow &LocateAutoNamedFiles);
+      &BuildWindow &LocateAutoNamedFiles &ShowTail);
     %EXPORT_TAGS = ();    # eg: TAG => [ qw!name1 name2! ],
 
     # your exported package globals go here,
@@ -34,6 +37,8 @@ our $ldms_log_class =
     -name => "ldms_log Class",
     -icon => $ldms_log_icon,
   );
+
+our $Q_tail = Thread::Queue->new ;
 
 # non-exported package globals go here
 my ( $RegKey, $FILE, $ldmain, $ldlog, $lpmdir, $ldlogon, );
@@ -108,11 +113,23 @@ sub SetupTail {
             )
         );
     }
+    &StartTailThread;
     return 0;
+}
+
+### Start the tailing thread ################################################
+sub StartTailThread {
+    async {
+        while (1) {
+            $Q_tail->enqueue( &DoTail ) ;
+        };
+    }->detach;
+    return 0;    
 }
 
 ### See what's on Tail subroutine ###########################################
 sub DoTail {
+    my $message;
     my ( $nfound, $timeleft, @pending ) =
       File::Tail::select( undef, undef, undef, $timeout, @files );
     Win32::GUI::DoEvents();
@@ -120,18 +137,25 @@ sub DoTail {
         Win32::GUI::DoEvents();
 
         # timeout - do something else here, if you need to
-        &Log("-- MARK --");
-        &Display("-- MARK --\n");
+        $message = "-- MARK --";
     }
     else {
         foreach (@pending) {
             Win32::GUI::DoEvents();
             my $filename = basename( $_->{"input"} );
-            my $message  = $filename . ": " . $_->read;
-            Win32::GUI::DoEvents();
-            &Log($message);
-            &Display($message);
+            $message  = $filename . ": " . $_->read;
+            chomp($message);
         }
+    }
+    return $message;
+}
+
+### Show what's on Tail subroutine #########################################
+sub ShowTail {
+    my $message = $Q_tail->dequeue_nb;
+    if ($message) {
+        &Log($message);
+        &Display("$message\n");
     }
     return 0;
 }
@@ -211,12 +235,13 @@ sub Main_Resize {
 
 ### Universal Window Termination ############################################
 sub Window_Terminate {
+    &Log("$prog $ver stopping.\n");    
     return -1;
 }
 
 ### Window timer ############################################################
 sub T1_Timer {
-    &DoTail;
+    &ShowTail;
 }
 
 ### Locate auto-named log files #############################################
