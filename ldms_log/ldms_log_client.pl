@@ -29,8 +29,8 @@ for ( 0 .. $#ARGV ) {
 }
 
 my ( $DEBUG, $help ) = '';
+Getopt::Long::Configure("long_prefix_pattern=(--|\/)", "prefix_pattern=(--|-|\/)");
 GetOptions(
-    '/',
     'debug' => \$DEBUG,
     'help'  => \$help,
 );
@@ -38,7 +38,7 @@ GetOptions(
 ( my $prog = $0 ) =~ s/^         # command line from the beginning
                        .*[\\\/]  # without any slashes
                        //x;
-$VERSION = "1.0.5";
+$VERSION = "1.0.6";
 
 my $usage = <<"EOD";
 
@@ -121,19 +121,10 @@ sub LocateFiles {
     &LocateAutoNamedFiles( "$ldclient",              'sdclienttask.(.+).log' );
     &LocateAutoNamedFiles( "$localappdata\\vulscan", 'vulscan.(\d).log' );
 
+    # Handle XTrace logs
+    &LocateAutoNamedFiles( "$ldclient",              '(.+).xlg' );
+
     my @Clientlogs = (
-        "$ldclient\\lddwnld.xlg",
-        "$ldclient\\localsch.xlg",
-        "$ldclient\\ltapi.xlg",
-        "$ldclient\\msgsys_dll.xlg",
-        "$ldclient\\msgsys_exe.xlg",
-        "$ldclient\\pds.xlg",
-        "$ldclient\\sdclient.xlg",
-        "$ldclient\\tmcclnt.xlg",
-        "$ldclient\\tmcsrvr.xlg",
-        "$ldclient\\tmcsvcexe.xlg",
-        "$ldclient\\usbmon.xlg",
-        "$ldclient\\wscfg32.xlg",
         "$ldclient\\amtmon.Log",
         "$ldclient\\sdclient.log",
         "$ldclient\\tmcsvc.log",
@@ -159,9 +150,9 @@ sub LocateFiles {
         "$ldclient\\Antivirus\\UpdateVirusDefinitions.old",
         "$localappdata\\LANDeskAV\\avservice.log",
         "$localappdata\\LANDeskAV\\avservice_channel.log",
-        "$localappdata\\LANDeskAV\\LANDeskAV\\AVScanShExt.log",
-        "$localappdata\\LANDeskAV\\LANDeskAV\\LDAV.log",
-        "$localappdata\\LANDeskAV\\LANDeskAV\\avservice_update.log",
+        "$localappdata\\LANDeskAV\\AVScanShExt.log",
+        "$localappdata\\LANDeskAV\\LDAV.log",
+        "$localappdata\\LANDeskAV\\avservice_update.log",
         "$ldclient\\data\\gatherproducts.log",
         "$ldclient\\ldiscn32.log",
         "$ldclient\\data\ldiscn32.log",

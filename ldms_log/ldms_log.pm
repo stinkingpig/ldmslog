@@ -15,7 +15,7 @@ BEGIN {
     our ( $VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
     # set the version for version checking
-    $VERSION = 1.0.5;
+    $VERSION = 1.0.6;
     @ISA     = qw(Exporter);
     @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie &SetupTail &DoTail
       &BuildWindow &LocateAutoNamedFiles &ShowTail);
@@ -102,17 +102,21 @@ sub LogDie {
 
 ### Prepare all these tail handles subroutine ###############################
 sub SetupTail {
-    foreach (@logfiles) {
+    my $count = 0;
+    foreach my $entry (@logfiles) {
+        $count++;
+        if ($DEBUG) {&Log("$count adding $entry to tail queue...");}
         push(
             @files,
             File::Tail->new(
-                name               => "$_",
+                name               => "$entry",
                 debug              => $DEBUG,
                 ignore_nonexistant => 1,
                 tail               => 1,
-            )
+            )||die("can't tail $entry - $!")
         );
     }
+    &Log("monitoring $count logfiles.");
     &StartTailThread;
     return 0;
 }
@@ -277,7 +281,7 @@ sub LocateAutoNamedFiles {
                 if ($DEBUG) {
                     &Log("monitoring $candidate");
                 }
-                push @ldms_log::logfiles, $candidate;
+                push @ldms_log::logfiles, $dir . "\\" . $candidate;
             }
             else {
                 if ($DEBUG) {
