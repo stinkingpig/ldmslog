@@ -29,8 +29,8 @@ for ( 0 .. $#ARGV ) {
 }
 
 my ( $DEBUG, $help ) = '';
+Getopt::Long::Configure("long_prefix_pattern=(--|\/)", "prefix_pattern=(--|-|\/)");
 GetOptions(
-    '/',
     'debug' => \$DEBUG,
     'help'  => \$help,
 );
@@ -38,7 +38,7 @@ GetOptions(
 ( my $prog = $0 ) =~ s/^         # command line from the beginning
                        .*[\\\/]  # without any slashes
                        //x;
-$VERSION = "1.0.5";
+$VERSION = "1.0.6";
 my $usage = <<"EOD";
 
 Usage: $prog [/debug] [/help]
@@ -106,6 +106,9 @@ sub LocateFiles {
     # Handle IIS logs
     &LocateAutoNamedFiles( "$WINDIR\\system32\\LogFiles\\W3SVC1", 'ex(\d+).log' );
 
+    # Handle XTrace logs
+    &LocateAutoNamedFiles( $ldmain, '(.+).xlg' );
+
     &LocateAutoNamedFiles( $ldlog, 'scheduledtaskhandler_(\d+).log' );
     &LocateAutoNamedFiles( $ldlog, 'cab_(\d+).log' );
     &LocateAutoNamedFiles( $ldlog, 'cj-(.+).log' );
@@ -113,29 +116,10 @@ sub LocateFiles {
     &LocateAutoNamedFiles( $ldlog, 'mcs-(.+).log' );
     &LocateAutoNamedFiles( "$ldlogon\\advanceagent", '(.+).exe.log' );
     &LocateAutoNamedFiles( $ldmain, 'Rollup_(.+).log' );
+    &LocateAutoNamedFiles( $ldmain, 'LDInv32(.+).log' );
     &LocateAutoNamedFiles( "$lpmdir\\TaskEngine", '(.+)Landesk.Workflow.TaskEngine.Internal.log' );
 
     my @Corelogs = (
-        "$ldmain\\amslib.xlg",
-        "$ldmain\\apmapi.xlg",
-        "$ldmain\\apmservice.xlg",
-        "$ldmain\\cbaxfr.xlg",
-        "$ldmain\\custjob.xlg",
-        "$ldmain\\iao.xlg",
-        "$ldmain\\ldinv32.xlg",
-        "$ldmain\\msgsys_dll.xlg",
-        "$ldmain\\msgsys_exe.xlg",
-        "$ldmain\\netmap.xlg",
-        "$ldmain\\nts.xlg",
-        "$ldmain\\pds.xlg",
-        "$ldmain\\qipclnt.xlg",
-        "$ldmain\\qipsrvr.xlg",
-        "$ldmain\\scheduler.xlg",
-        "$ldmain\\sdmakini.xlg",
-        "$ldmain\\sdstinst.xlg",
-        "$ldmain\\tmcsrvr.xlg",
-        "$ldmain\\wcustjob.xlg",
-        "$ldmain\\xfr.xlg",
         "$ldmain\\alertdetail.log",
         "$ldmain\\alertname2table.exe.log",
         "$ldmain\\alertrule2xml.exe.log",
@@ -185,8 +169,6 @@ sub LocateFiles {
         "$ldlogon\\antivirus\\cab\\cab.log",
         "$ldlogon\\antivirus\\bases\\cab.log",
         "$ldlogon\\spyware\\vulscan.log",
-        "$ldmain\\LDInv32.exe.log",
-        "$ldmain\\LDInv32.log",
         "$ldmain\\UserValidatorErrLog.txt",
         "$ldmain\\LANDeskManagementSuite.Information.log",
         "$ldmain\\dashboardreportservice.exe.log"
