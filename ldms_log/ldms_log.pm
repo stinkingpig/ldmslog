@@ -15,7 +15,7 @@ BEGIN {
     our ( $VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
     # set the version for version checking
-    $VERSION = 1.0.6;
+    $VERSION = 1.0.7;
     @ISA     = qw(Exporter);
     @EXPORT  = qw(&NewLog &Log &LogWarn &LogDie &SetupTail &DoTail
       &BuildWindow &LocateAutoNamedFiles &ShowTail);
@@ -237,7 +237,7 @@ sub Display {
 
 ### Resize the Main Window ##################################################
 sub Main_Resize {
-    $Wintext->Resize( $Main->Width() - 8, $Main->Height() - 10);
+    $Wintext->Resize( $Main->Width() - 8, $Main->Height() - 25);
     return 0;
 }
 
