@@ -141,7 +141,7 @@ sub DoTail {
         Win32::GUI::DoEvents();
 
         # timeout - do something else here, if you need to
-        $message = localtime() . ": -- MARK --";
+        $message = "$prog $ver: " . localtime() . ": -- MARK --";
     }
     else {
         foreach (@pending) {
