@@ -1,0 +1,1 @@
+aggregate and analyze the logs of LANDesk products
